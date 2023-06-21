@@ -39,7 +39,7 @@ def tell_me_its_crap(loc: str):
     report = f"""# Weather is crap in:
 {loc} :umbrella::cloud:"""
     create_markdown_artifact(
-        key="crap weather report",
+        key="crap-weather-report",
         markdown=report,
         description="where is the weather crap?"
     )
