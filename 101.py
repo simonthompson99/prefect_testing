@@ -1,6 +1,7 @@
 import httpx
 from prefect import task, flow, get_run_logger
 from prefect.tasks import task_input_hash
+from prefect.artifacts import create_markdown_artifact
 import csv
 import datetime
 
@@ -33,12 +34,15 @@ def fetch_cloud(lat: float, lon: float):
     return most_recent_cloudcover
 
 
-@task(log_prints=True)
+@task
 def tell_me_its_crap(loc: str):
-    with open("weather.csv", "w+") as w:
-        writer = csv.writer(w)
-        writer.writerow([loc, datetime.datetime.now()])
-    print(f"it's crap weather in {loc}")
+    report = f"""# Weather is crap in:
+{loc} :umbrella::cloud:"""
+    create_markdown_artifact(
+        key="crap weather report",
+        markdown=report,
+        description="where is the weather crap?"
+    )
 
 
 @flow(name="get some weather")
