@@ -1,9 +1,11 @@
 import httpx
+from pathlib import Path
 from prefect import task, flow, get_run_logger
 from prefect.tasks import task_input_hash
 from prefect.artifacts import create_markdown_artifact
 import csv
 import datetime
+from prefect_aws.s3 import S3Bucket
 
 LOCATIONS = {
     "sheffield": (53.4, -1.47),
@@ -36,6 +38,12 @@ def fetch_cloud(lat: float, lon: float):
 
 @task
 def tell_me_its_crap(loc: str):
+    path = Path(f'weather-{loc}.csv')
+    with open(path, "w+") as w:
+        writer = csv.writer(w)
+        writer.writerow([loc, datetime.datetime.now()])
+    s3_block = S3Bucket.load('training-s3-bucket-block')
+    s3_block.upload_from_path(from_path=path, to_path=path)
     report = f"""# Weather is crap in:
 {loc} :umbrella::cloud:"""
     create_markdown_artifact(
@@ -51,7 +59,7 @@ def get_weather(loc: str, lat: float, lon: float):
     LOGGER.info(f"Fetching weather for {loc}")
     rain = fetch_rain(lat, lon)
     cloud = fetch_cloud(lat, lon)
-    if rain > 1 or cloud > 90:
+    if rain > 0 or cloud > 20:
         tell_me_its_crap(loc)
 
 @flow(name="getting all the weather")
